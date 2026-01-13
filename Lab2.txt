@@ -1,0 +1,78 @@
+1.
+ CREATE TABLE Employee (
+  2      EmpNo NUMBER(7) PRIMARY KEY,
+  3      Emp_Name VARCHAR2(50) NOT NULL,
+  4      Gender CHAR(1) NOT NULL CHECK (Gender IN ('M','F')),
+  5      Salary NUMBER(10,2) NOT NULL,
+  6      Emp_Address VARCHAR2(50) NOT NULL,
+  7      DNo NUMBER(8)
+  8  );
+
+2.
+create table department ( dept_No number(8) primary key, dept_Name varchar(50) unique not null, location varchar(60));
+table created
+
+3.
+CREATE TABLE Employee(
+       EmpNo NUMBER(7) PRIMARY KEY,
+      Emp_Name VARCHAR2(50) NOT NULL,
+      Gender CHAR(1) NOT NULL CHECK (Gender IN ('M','F')),
+       Salary NUMBER(10,2) NOT NULL,
+        Emp_Address VARCHAR2(50) NOT NULL,
+        DNo NUMBER(8),
+FOREIGN KEY (DNo) REFERENCES Department(dept_No));
+Table created.
+
+4.
+INSERT INTO Department (dept_no,dept_name,location)
+VALUES (10, 'Human Resources', 'Hyderabad');
+INSERT INTO Department (dept_no,dept_name,location)
+VALUES (20,'Human Resources', 'Hyderabad');
+INSERT INTO Employee (EmpNo,emp_name,gender,salary,emp_address,DNo)
+VALUES (102 'C','F', 50000, 'Hyderabad', 20);
+INSERT INTO Employee (EmpNo,emp_name,gender,salary,emp_address,DNo)
+VALUES (101, 'Alice', 'F', 50000, 'Hyderabad', 10);
+
+
+5.
+INSERT INTO Department (dept_no,dept_name,location)
+VALUES (10, 'Operations', 'Bangalore');
+ORA-00001: unique constraint (AIMLA43.SYS_C009504) violated
+
+
+6.
+DELETE FROM Department WHERE dept_no=20;
+
+7.
+ALTER TABLE Employee
+DROP CONSTRAINT SYS_C009666;
+
+ ALTER TABLE Employee
+  2  DROP CONSTRAINT SYS_C009666;
+
+Table altered.
+
+CREATE TABLE Employee (
+   EmpNo NUMBER(7) PRIMARY KEY,
+     Emp_Name VARCHAR2(50) NOT NULL,
+        Gender CHAR(1) NOT NULL CHECK (Gender IN ('M','F')),
+        Salary NUMBER(10,2) NOT NULL,
+        Emp_Address VARCHAR2(50) NOT NULL
+  
+      CONSTRAINT emp_dept_fk FOREIGN KEY (DNo)
+          REFERENCES Department(Dept_No)
+         ON DELETE CASCADE
+  );
+
+
+8.
+
+INSERT INTO Employee (EmpNo, Emp_Name, Gender, Emp_Address, DNo)
+  2  VALUES (301, 'Ravi', 'M', 'Udupi', 10);
+INSERT INTO Employee (EmpNo, Emp_Name, Gender, Emp_Address, DNo)
+*
+ERROR at line 1:
+ORA-02291: integrity constraint (AIMLA43.EMP_DEPT_FK) violated - parent key not
+found
+
+
