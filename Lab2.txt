@@ -76,3 +76,142 @@ ORA-02291: integrity constraint (AIMLA43.EMP_DEPT_FK) violated - parent key not
 found
 
 
+
+
+LAB 2:
+CREATE TABLE employee (
+    empno     NUMBER PRIMARY KEY,
+    empname   VARCHAR2(30) NOT NULL,
+    gender    CHAR(1) NOT NULL CHECK (gender IN ('M','F')),
+    salary    NUMBER NOT NULL,
+    address   VARCHAR2(50) NOT NULL,
+    dno       NUMBER
+);
+2.
+CREATE TABLE department (
+    deptno    NUMBER PRIMARY KEY,
+    deptname  VARCHAR2(30) UNIQUE,
+    location  VARCHAR2(30)
+);
+3.
+ALTER TABLE employee
+ADD CONSTRAINT emp_dept_fk
+FOREIGN KEY (dno) REFERENCES department(deptno);
+
+
+INSERT INTO department VALUES (10, 'CSE', 'BLOCK A');
+INSERT INTO department VALUES (20, 'ECE', 'BLOCK B');
+
+INSERT INTO employee VALUES (1, 'RAM', 'M', 30000, 'DELHI', 10);
+INSERT INTO employee VALUES (2, 'SITA', 'F', 35000, 'MUMBAI', 20);
+
+5.
+
+INSERT INTO employee VALUES (1, 'RAJU', 'M', 20000, 'CHENNAI', 10); -- PK violation
+
+INSERT INTO employee VALUES (3, NULL, 'M', 20000, 'DELHI', 10);    -- NOT NULL violation
+
+INSERT INTO employee VALUES (4, 'KIRAN', 'X', 20000, 'DELHI', 10); -- CHECK violation
+
+6.
+DELETE FROM department WHERE deptno = 10;
+
+7.
+
+ALTER TABLE employee DROP CONSTRAINT emp_dept_fk;
+
+8.
+ALTER TABLE employee
+ADD CONSTRAINT emp_dept_fk
+FOREIGN KEY (dno) REFERENCES department(deptno)
+ON DELETE CASCADE;
+INSERT INTO employee (empno, empname, gender, address, dno)
+VALUES (5, 'ANU', 'F', 'PUNE', 10);
+
+9.SELECT name, dept_name
+FROM student;
+
+10.SELECT name
+FROM instructor
+WHERE dept_name = 'CSE';
+
+11.SELECT title
+FROM course
+WHERE dept_name = 'CSE'
+AND credits = 3;
+
+12.SELECT c.course_id, c.title
+FROM course c, takes t
+WHERE c.course_id = t.course_id
+AND t.id = 12345;
+
+13.SELECT name
+FROM instructor
+WHERE salary BETWEEN 40000 AND 90000;
+
+14.SELECT id
+FROM instructor
+WHERE id NOT IN (
+    SELECT id FROM teaches
+);
+
+15.SELECT s.name, c.title, se.year
+FROM student s, course c, takes t, section se
+WHERE s.id = t.id
+AND t.course_id = c.course_id
+AND c.course_id = se.course_id
+AND t.sec_id = se.section_id
+AND t.semester = se.semester
+AND t.year = se.year
+AND se.room_number = 303;
+
+16.SELECT s.name, t.course_id, c.title AS c_name
+FROM student s, takes t, course c
+WHERE s.id = t.id
+AND t.course_id = c.course_id
+AND t.year = 2015;
+
+
+17.SELECT name, salary AS inst_salary
+FROM instructor
+WHERE salary > (
+    SELECT MIN(salary)
+    FROM instructor
+    WHERE dept_name = 'CSE'
+);
+
+
+18.SELECT name
+FROM instructor
+WHERE dept_name LIKE '%ch%';
+
+19.SELECT name, LENGTH(name) AS name_length
+FROM student;
+
+
+20.SELECT dept_name, SUBSTR(dept_name, 3, 3)
+FROM department;
+
+
+21.SELECT UPPER(name)
+FROM instructor;
+
+
+22.SELECT name, NVL(salary, 0)
+FROM instructor;
+
+
+23.SELECT salary, ROUND(salary/3, -2)
+FROM instructor;
+
+24.SELECT 
+    TO_CHAR(dob, 'DD-MON-YYYY'),
+    TO_CHAR(dob, 'DD-MON-YY'),
+    TO_CHAR(dob, 'DD-MM-YY')
+FROM employee;
+
+25.SELECT empname,
+       TO_CHAR(dob, 'YEAR'),
+       TO_CHAR(dob, 'Year'),
+       TO_CHAR(dob, 'year')
+FROM employee;
