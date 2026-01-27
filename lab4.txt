@@ -1,0 +1,273 @@
+1. select course_id ,count(distinct id) num_students from takes group by course_id;
+
+COURSE_I NUM_STUDENTS
+-------- ------------
+FIN-201             1
+CS-190              2
+MU-199              1
+CS-101              6
+HIS-351             1
+CS-319              2
+CS-347              2
+PHY-101             1
+EE-181              1
+CS-315              2
+BIO-101             1
+BIO-301             1
+
+12 rows selected.
+
+
+2. SELECT dept_name, COUNT(ID) AS num_students
+    FROM Student
+    GROUP BY dept_name
+    HAVING COUNT(ID) > 10;
+
+no rows selected
+
+3.  select distinct dept_name from course group by dept_name;
+
+DEPT_NAME
+--------------------
+Comp. Sci.
+Biology
+History
+Elec. Eng.
+Finance
+Music
+Physics
+
+7 rows selected.
+
+
+4.  select dept_name,avg(salary) as avg_salary from instructor group by dept_name having avg(salary)>42000;
+
+DEPT_NAME            AVG_SALARY
+-------------------- ----------
+Comp. Sci.           77333.3333
+Biology                   72000
+History                   61000
+Finance                   85000
+Elec. Eng.                80000
+Physics                   91000
+
+6 rows selected.
+
+5. 
+SQL> SELECT course_id, sec_id, COUNT(ID) AS enrollment
+  2  FROM Takes
+  3  WHERE semester = 'Spring' AND year = 2009
+  4  GROUP BY course_id, sec_id;
+
+COURSE_I SEC_ID   ENROLLMENT
+-------- -------- ----------
+CS-190   2                 2
+EE-181   1                 1
+
+
+6. SQL> SELECT c.course_id, c.title, p.prereq_id
+  2  FROM Course c
+  3  JOIN Prereq p
+  4    ON c.course_id = p.course_id
+  5  ORDER BY c.course_id ASC;
+
+COURSE_ID  TITLE                                              PREREQ_I
+---------- -------------------------------------------------- --------
+BIO-301    Genetics                                           BIO-101
+BIO-399    Computational Biology                              BIO-101
+CS-190     Game Design                                        CS-101
+CS-315     Robotics                                           CS-101
+CS-319     Image Processing                                   CS-101
+CS-347     Database System Concepts                           CS-101
+EE-181     Intro. to Digital Systems                          PHY-101
+
+7 rows selected.
+
+7.
+ select * from instructor order by salary desc;
+
+ID    NAME                 DEPT_NAME                SALARY
+----- -------------------- -------------------- ----------
+22222 Einstein             Physics                   95000
+83821 Brandt               Comp. Sci.                92000
+12121 Wu                   Finance                   90000
+33456 Gold                 Physics                   87000
+98345 Kim                  Elec. Eng.                80000
+76543 Singh                Finance                   80000
+45565 Katz                 Comp. Sci.                75000
+76766 Crick                Biology                   72000
+10101 Srinivasan           Comp. Sci.                65000
+58583 Califieri            History                   62000
+32343 El Said              History                   60000
+15151 Mozart               Music                     40000
+
+12 rows selected.
+
+
+8. SQL> SELECT dept_name, SUM(salary) AS total_salary
+  2  FROM Instructor
+  3  GROUP BY dept_name
+  4  HAVING SUM(salary) = (
+  5      SELECT MAX(SUM(salary))
+  6      FROM Instructor
+  7      GROUP BY dept_name
+  8  );
+
+DEPT_NAME            TOTAL_SALARY
+-------------------- ------------
+Comp. Sci.                 232000
+
+
+9.  SELECT dept_name, avg_salary
+  2  FROM (
+  3      SELECT dept_name, AVG(salary) AS avg_salary
+  4      FROM Instructor
+  5      GROUP BY dept_name
+  6  ) dept_avg
+  7  WHERE avg_salary > 42000;
+
+DEPT_NAME            AVG_SALARY
+-------------------- ----------
+Comp. Sci.           77333.3333
+Biology                   72000
+History                   61000
+Finance                   85000
+Elec. Eng.                80000
+Physics                   91000
+
+6 rows selected.
+
+
+10. SQL> SELECT s.course_id, s.sec_id, s.semester, s.year, COUNT(t.ID) AS enrollment
+  2  FROM Section s
+  3  JOIN Takes t
+  4    ON s.course_id = t.course_id
+  5   AND s.sec_id   = t.sec_id
+  6   AND s.semester = t.semester
+  7   AND s.year     = t.year
+  8  WHERE s.semester = 'Spring' AND s.year = 2010
+  9  GROUP BY s.course_id, s.sec_id, s.semester, s.year
+ 10  HAVING COUNT(t.ID) = (
+ 11      SELECT MAX(enrollment)
+ 12      FROM (
+ 13          SELECT COUNT(ID) AS enrollment
+ 14          FROM Takes
+ 15          WHERE semester = 'Spring' AND year = 2010
+ 16          GROUP BY course_id, sec_id
+ 17      )
+ 18  );
+
+COURSE_I SEC_ID   SEMEST       YEAR ENROLLMENT
+-------- -------- ------ ---------- ----------
+CS-315   1        Spring       2010          2
+
+
+11. 
+SELECT I.name
+FROM Instructor I
+WHERE NOT EXISTS (
+    SELECT S.ID
+    FROM Student S
+    WHERE S.dept_name = 'CSE'
+      AND NOT EXISTS (
+          SELECT *
+          FROM Takes T, Teaches Te
+          WHERE S.ID = T.ID
+            AND T.course_id = Te.course_id
+            AND T.sec_id = Te.sec_id
+            AND T.semester = Te.semester
+            AND T.year = Te.year
+            AND Te.ID = I.ID
+      )
+);
+
+NAME
+--------------------
+Srinivasan
+Wu
+Mozart
+Einstein
+El Said
+Gold
+Katz
+Califieri
+Singh
+Crick
+Brandt
+Kim
+
+12 rows selected.
+
+
+
+12. SELECT dept_name, AVG(salary) AS avg_salary, COUNT(*) AS num_instructors
+  2  FROM Instructor
+  3  GROUP BY dept_name
+  4  HAVING AVG(salary) > 50000
+  5     AND COUNT(*) > 5;
+
+no rows selected
+
+13.  SELECT dept_name, budget
+  2  FROM Department
+  3  WHERE budget = (
+  4      SELECT MAX(budget)
+  5      FROM Department
+  6  );
+
+DEPT_NAME                BUDGET
+-------------------- ----------
+Finance                  120000
+
+
+14.  SELECT dept_name, SUM(salary) AS total_salary
+  2  FROM Instructor
+  3  GROUP BY dept_name
+  4  HAVING SUM(salary) > (
+  5      SELECT AVG(total_salary)
+  6      FROM (
+  7          SELECT SUM(salary) AS total_salary
+  8          FROM Instructor
+  9          GROUP BY dept_name
+ 10      )
+ 11  );
+
+DEPT_NAME            TOTAL_SALARY
+-------------------- ------------
+Comp. Sci.                 232000
+Finance                    170000
+Physics                    182000
+
+
+15.SAVEPOINT before_transfer; SAVEPOINT before_transfer;
+
+Savepoint created.
+
+SQL> UPDATE Student SET dept_name = 'IT' WHERE dept_name = 'CSE';
+
+0 rows updated.
+
+SQL> ROLLBACK TO before_transfer;
+
+Rollback complete.
+
+16.
+
+SQL> SAVEPOINT before_salary_update;
+
+Savepoint created.
+UPDATE Instructor SET salary = salary * 1.03 WHERE salary > 100000;
+
+0 rows updated.
+
+SQL> UPDATE Instructor SET salary = salary * 1.05 WHERE salary <= 100000;
+
+12 rows updated.
+
+SQL> ROLLBACK TO before_salary_update;
+
+Rollback complete.
+
+SQL> commit;
+
+Commit complete.
