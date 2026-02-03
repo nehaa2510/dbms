@@ -1,0 +1,159 @@
+1.SELECT Fname, Minit, Lname, Bdate, Address
+FROM Employee2
+WHERE Fname = 'John' AND Minit = 'B' AND Lname = 'Smith';
+FNAME           M LNAME           BDATE     ADDRESS
+--------------- - --------------- --------- ------------------------------
+John            B Smith           09-JAN-65 731 Fondren, Houston, TX
+
+SELECT E.Fname, E.Minit, E.Lname, E.Address
+FROM Employee2 E
+JOIN Department2 D ON E.Dno = D.Dnumber
+WHERE D.Dname = 'Research';
+FNAME           M LNAME           ADDRESS
+--------------- - --------------- ------------------------------
+John            B Smith           731 Fondren, Houston, TX
+Franklin        T Wong            638 Voss, Houston, TX
+Ramesh          K Narayan         975 Fire Oak, Humble, TX
+Joyce           A English         5631 Rice, Houston, TX
+
+2. SELECT P.Pnumber,
+  2         P.Dnum AS Controlling_Department_Number,
+  3         E.Lname AS Manager_LastName,
+  4         E.Address AS Manager_Address,
+  5         E.Bdate AS Manager_BirthDate
+  6  FROM PROJECT P
+  7  JOIN DEPARTMENT2 D ON P.Dnum = D.Dnumber
+  8  JOIN EMPLOYEE2 E ON D.Mgr_ssn = E.Ssn
+  9  WHERE P.Plocation = 'Stanford';
+
+no rows selected
+
+
+3.SELECT E.Fname AS Employee_FirstName,
+       E.Lname AS Employee_LastName,
+       S.Fname AS Supervisor_FirstName,
+       S.Lname AS Supervisor_LastName
+FROM Employee2 E
+LEFT JOIN Employee2 S
+       ON E.Super_ssn = S.Ssn;
+
+EMPLOYEE_FIRSTN EMPLOYEE_LASTNA SUPERVISOR_FIRS SUPERVISOR_LAST
+--------------- --------------- --------------- ---------------
+Richard         Marini          Richard         Marini
+John            Smith           Franklin        Wong
+Ramesh          Narayan         Franklin        Wong
+Joyce           English         Franklin        Wong
+Alicia          Zelaya          Jennifer        Wallace
+Ahmad           Jabbar          Jennifer        Wallace
+Franklin        Wong            James           Borg
+Jennifer        Wallace         James           Borg
+James           Borg
+
+9 rows selected.
+
+4.SELECT DISTINCT P.Pnumber
+FROM PROJECT P
+JOIN WORKS_ON W ON P.Pnumber = W.Pno
+JOIN EMPLOYEE2 E1 ON W.Essn = E1.Ssn
+WHERE E1.Lname = 'Smith' UNION
+SELECT DISTINCT P.Pnumber
+FROM PROJECT P
+JOIN DEPARTMENT2 D ON P.Dnum = D.Dnumber
+JOIN EMPLOYEE2 E2 ON D.Mgr_ssn = E2.Ssn
+WHERE E2.Lname = 'Smith';
+
+
+   PNUMBER
+----------
+         1
+         2
+
+5.SELECT E.Fname, E.Lname, E.Salary AS Original_Salary,
+       E.Salary * 1.10 AS New_Salary
+FROM Employee2 E
+JOIN Works_On W ON E.Ssn = W.Essn
+JOIN Project P ON W.Pno = P.Pnumber
+WHERE P.Pname = 'ProductX';
+
+FNAME           LNAME           ORIGINAL_SALARY NEW_SALARY
+--------------- --------------- --------------- ----------
+John            Smith                     30000      33000
+Joyce           English                   25000      27500
+
+
+
+
+6.SELECT D.Dname AS Department,
+       E.Lname AS Employee_LastName,
+       E.Fname AS Employee_FirstName,
+       P.Pnumber AS Project_Number,
+       P.Pname   AS Project_Name
+FROM Employee2 E
+JOIN Works_On W ON E.Ssn = W.Essn
+JOIN Project P ON W.Pno = P.Pnumber
+JOIN Department2 D ON E.Dno = D.Dnumber
+ORDER BY D.Dname, E.Lname, E.Fname;
+
+DEPARTMENT      EMPLOYEE_LASTNA EMPLOYEE_FIRSTN PROJECT_NUMBER PROJECT_NAME
+--------------- --------------- --------------- -------------- ---------------
+Administration  Borg            James                       20 Reorganization
+Administration  Jabbar          Ahmad                       10 Computerization
+Administration  Jabbar          Ahmad                       30 Newbenefits
+Administration  Wallace         Jennifer                    30 Newbenefits
+Administration  Wallace         Jennifer                    20 Reorganization
+Administration  Zelaya          Alicia                      30 Newbenefits
+Administration  Zelaya          Alicia                      10 Computerization
+Research        English         Joyce                        2 ProductY
+Research        English         Joyce                        1 ProductX
+Research        Narayan         Ramesh                       3 ProductZ
+Research        Smith           John                         2 ProductY
+Research        Smith           John                         1 ProductX
+Research        Wong            Franklin                    20 Reorganization
+Research        Wong            Franklin                     3 ProductZ
+Research        Wong            Franklin                     2 ProductY
+Research        Wong            Franklin                    10 Computerization
+
+
+7.
+SELECT DISTINCT E.Fname AS Employee_FirstName,
+       E.Lname AS Employee_LastName
+FROM Employee2 E
+JOIN Dependent D ON E.Ssn = D.Essn
+WHERE E.Fname = D.Dependent_name
+  AND E.Sex = D.Sex;
+no rows selected
+
+8. SELECT E.Fname, E.Lname
+FROM Employee2 E
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Dependent D
+    WHERE D.Essn = E.Ssn
+);
+
+FNAME           LNAME
+--------------- ---------------
+Richard         Marini
+James           Borg
+Alicia          Zelaya
+Ahmad           Jabbar
+Joyce           English
+Ramesh          Narayan
+
+6 rows selected.
+
+
+
+9.SELECT DISTINCT E.Fname, E.Lname
+FROM Department2 D
+JOIN Employee2 E ON D.Mgr_ssn = E.Ssn
+JOIN Dependent Dep ON E.Ssn = Dep.Essn;
+
+FNAME           LNAME
+--------------- ---------------
+Franklin        Wong
+Jennifer        Wallace
+
+
+
+10. 
