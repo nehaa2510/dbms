@@ -379,6 +379,33 @@ new   4:     v_year  NUMBER := 2024;  -- user input
 Rental Date: 12-FEB-2024
 Return Date: 15-FEB-2024
 
+3. DECLARE
+  2      v_limit NUMBER := &counter;
+  3  v_counter number:=1;
+  4  BEGIN
+  5      LOOP
+  6          DBMS_OUTPUT.PUT_LINE('Counter value: ' || v_counter);
+  7
+  8          -- Exit condition
+  9          IF v_counter > v_limit THEN
+ 10              DBMS_OUTPUT.PUT_LINE('Loop exceeded the limit value!');
+ 11              EXIT;
+ 12          END IF;
+ 13
+ 14          -- Increment counter
+ 15          v_counter := v_counter + 1;
+ 16      END LOOP;
+ 17  END;
+ 18  /
+Enter value for counter: 3
+old   2:     v_limit NUMBER := &counter;
+new   2:     v_limit NUMBER := 3;
+Counter value: 1
+Counter value: 2
+Counter value: 3
+Counter value: 4
+Loop exceeded the limit value!
+
 
 
 
