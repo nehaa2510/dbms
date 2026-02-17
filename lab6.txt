@@ -1,0 +1,384 @@
+ CREATE TABLE StudentTable ( RollNo NUMBER PRIMARY KEY, GPA NUMBER(3,1) );
+
+Table created.
+
+ select * from studenttable;
+
+    ROLLNO        GPA
+---------- ----------
+         1        5.8
+         2        7.8
+         3        6.8
+         4        8.8
+
+
+1.
+SET SERVEROUTPUT ON;
+ DECLARE
+  2      v_rollno StudentTable.RollNo%TYPE := 3;  -- specify RollNo
+  3      v_gpa    StudentTable.GPA%TYPE;
+  4  BEGIN
+  5      SELECT GPA
+  6      INTO v_gpa
+  7      FROM StudentTable
+  8      WHERE RollNo = v_rollno;
+  9
+ 10      DBMS_OUTPUT.PUT_LINE('GPA of student with RollNo ' || v_rollno || ' is: ' || v_gpa);
+ 11  EXCEPTION
+ 12      WHEN NO_DATA_FOUND THEN
+ 13          DBMS_OUTPUT.PUT_LINE('No student found with RollNo ' || v_rollno);
+ 14      WHEN OTHERS THEN
+ 15          DBMS_OUTPUT.PUT_LINE('Unexpected error: ' || SQLERRM);
+ 16  END;
+ 17  /
+GPA of student with RollNo 3 is: 6.8
+
+PL/SQL procedure successfully completed.
+
+2.DECLARE
+    v_rollno StudentTable.RollNo%TYPE := 4;  -- specify the RollNo here
+    v_gpa    StudentTable.GPA%TYPE;
+    v_grade  VARCHAR2(2);
+BEGIN
+    -- Fetch GPA for the given RollNo
+    SELECT GPA
+    INTO v_gpa
+    FROM StudentTable
+    WHERE RollNo = v_rollno;
+
+    -- Determine letter grade
+    IF v_gpa BETWEEN 0 AND 4 THEN
+        v_grade := 'F';
+    ELSIF v_gpa BETWEEN 4 AND 5 THEN
+        v_grade := 'E';
+    ELSIF v_gpa BETWEEN 5 AND 6 THEN
+        v_grade := 'D';
+    ELSIF v_gpa BETWEEN 6 AND 7 THEN
+        v_grade := 'C';
+    ELSIF v_gpa BETWEEN 7 AND 8 THEN
+        v_grade := 'B';
+    ELSIF v_gpa BETWEEN 8 AND 9 THEN
+        v_grade := 'A';
+    ELSIF v_gpa BETWEEN 9 AND 10 THEN
+        v_grade := 'A+';
+    ELSE
+        v_grade := 'Invalid GPA';
+    END IF;
+
+    -- Display the result
+    DBMS_OUTPUT.PUT_LINE('Student RollNo: ' || v_rollno || 
+                         ', GPA: ' || v_gpa || 
+                         ', Grade: ' || v_grade);
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('No student found with RollNo ' || v_rollno);
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Unexpected error: ' || SQLERRM);
+END;
+/
+Student RollNo: 4, GPA: 8.8, Grade: A
+
+
+3.
+CREATE TABLE BookIssue (
+    BookID       NUMBER PRIMARY KEY,
+    IssueDate    DATE NOT NULL,
+    ReturnDate   DATE
+);
+
+
+INSERT INTO BookIssue (BookID, IssueDate, ReturnDate) 
+VALUES (1, TO_DATE('01-FEB-2026','DD-MON-YYYY'), TO_DATE('05-FEB-2026','DD-MON-YYYY'));
+
+INSERT INTO BookIssue (BookID, IssueDate, ReturnDate) 
+VALUES (2, TO_DATE('01-FEB-2026','DD-MON-YYYY'), TO_DATE('12-FEB-2026','DD-MON-YYYY'));
+
+INSERT INTO BookIssue (BookID, IssueDate, ReturnDate) 
+VALUES (3, TO_DATE('01-FEB-2026','DD-MON-YYYY'), TO_DATE('20-FEB-2026','DD-MON-YYYY'));
+
+INSERT INTO BookIssue (BookID, IssueDate, ReturnDate) 
+VALUES (4, TO_DATE('01-FEB-2026','DD-MON-YYYY'), TO_DATE('10-MAR-2026','DD-MON-YYYY'));
+
+COMMIT;
+
+
+DECLARE
+    v_issue_date   DATE := TO_DATE('01-FEB-2026', 'DD-MON-YYYY');  -- example issue date
+    v_return_date  DATE := TO_DATE('20-FEB-2026', 'DD-MON-YYYY');  -- example return date
+    v_days_late    NUMBER;
+    v_fine         NUMBER := 0;
+BEGIN
+    -- Calculate late period
+    v_days_late := v_return_date - v_issue_date;
+
+    -- Determine fine based on late period
+    IF v_days_late <= 7 THEN
+        v_fine := 0;
+        DBMS_OUTPUT.PUT_LINE('Book returned within 7 days. No fine.');
+    ELSIF v_days_late BETWEEN 8 AND 15 THEN
+        v_fine := (v_days_late - 7) * 1;  -- Rs.1 per day after 7 days
+        DBMS_OUTPUT.PUT_LINE('Late by ' || v_days_late || ' days. Fine: Rs.' || v_fine);
+    ELSIF v_days_late BETWEEN 16 AND 30 THEN
+        v_fine := (v_days_late - 15) * 2 + (15 - 7) * 1;  
+        -- Rs.1/day for days 8–15, Rs.2/day for days 16–30
+        DBMS_OUTPUT.PUT_LINE('Late by ' || v_days_late || ' days. Fine: Rs.' || v_fine);
+    ELSE
+        v_fine := (15 - 7) * 1 + (30 - 15) * 2 + (v_days_late - 30) * 5;
+        -- Rs.1/day for 8–15, Rs.2/day for 16–30, Rs.5/day after 30
+        DBMS_OUTPUT.PUT_LINE('Late by ' || v_days_late || ' days. Fine: Rs.' || v_fine);
+    END IF;
+END;
+/
+Late by 19 days. Fine: Rs.16
+
+
+4.DECLARE
+    v_rollno StudentTable.RollNo%TYPE := 1;
+    v_gpa    StudentTable.GPA%TYPE;
+    v_grade  VARCHAR2(2);
+BEGIN
+<<start_loop>>
+    SELECT GPA INTO v_gpa
+    FROM StudentTable
+    WHERE RollNo = v_rollno;
+
+    -- Map GPA to letter grade
+    IF v_gpa BETWEEN 0 AND 4 THEN
+        v_grade := 'F';
+    ELSIF v_gpa BETWEEN 4 AND 5 THEN
+        v_grade := 'E';
+    ELSIF v_gpa BETWEEN 5 AND 6 THEN
+        v_grade := 'D';
+    ELSIF v_gpa BETWEEN 6 AND 7 THEN
+        v_grade := 'C';
+    ELSIF v_gpa BETWEEN 7 AND 8 THEN
+        v_grade := 'B';
+    ELSIF v_gpa BETWEEN 8 AND 9 THEN
+        v_grade := 'A';
+    ELSIF v_gpa BETWEEN 9 AND 10 THEN
+        v_grade := 'A+';
+    ELSE
+        v_grade := 'NA';
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('RollNo: ' || v_rollno ||
+                         ', GPA: ' || v_gpa ||
+                         ', Grade: ' || v_grade);
+
+    v_rollno := v_rollno + 1;
+    IF v_rollno <= 5 THEN
+        GOTO start_loop;
+    END IF;
+END;
+/
+
+RollNo: 1, GPA: 5.8, Grade: D
+RollNo: 2, GPA: 7.8, Grade: B
+RollNo: 3, GPA: 6.8, Grade: C
+RollNo: 4, GPA: 8.8, Grade: A
+RollNo: 5, GPA: 8, Grade: B
+
+
+
+5.
+	ALTER TABLE StudentTable
+  2  ADD LetterGrade VARCHAR2(2);
+
+Table altered.
+
+SQL> BEGIN
+  2      FOR rec IN (SELECT RollNo, GPA FROM StudentTable) LOOP
+  3          UPDATE StudentTable
+  4          SET LetterGrade =
+  5              CASE
+  6                  WHEN rec.GPA BETWEEN 0 AND 4 THEN 'F'
+  7                  WHEN rec.GPA BETWEEN 4 AND 5 THEN 'E'
+  8                  WHEN rec.GPA BETWEEN 5 AND 6 THEN 'D'
+  9                  WHEN rec.GPA BETWEEN 6 AND 7 THEN 'C'
+ 10                  WHEN rec.GPA BETWEEN 7 AND 8 THEN 'B'
+ 11                  WHEN rec.GPA BETWEEN 8 AND 9 THEN 'A'
+ 12                  WHEN rec.GPA BETWEEN 9 AND 10 THEN 'A+'
+ 13                  ELSE 'NA'
+ 14              END
+ 15          WHERE RollNo = rec.RollNo;
+ 16      END LOOP;
+ 17
+ 18      COMMIT;
+ 19  END;
+ 20  /
+
+PL/SQL procedure successfully completed.
+
+
+6.
+ 
+DECLARE
+    v_max_gpa StudentTable.GPA%TYPE := -1;
+    v_rollno  StudentTable.RollNo%TYPE;
+BEGIN
+    -- Loop through all students
+    FOR rec IN (SELECT RollNo, GPA FROM StudentTable WHERE RollNo BETWEEN 1 AND 5) LOOP
+        IF rec.GPA > v_max_gpa THEN
+            v_max_gpa := rec.GPA;
+            v_rollno  := rec.RollNo;
+        END IF;
+    END LOOP;
+
+    -- Print the student with maximum GPA
+    DBMS_OUTPUT.PUT_LINE('Student with maximum GPA: RollNo ' || v_rollno ||
+                         ', GPA: ' || v_max_gpa);
+END;
+/
+
+
+Student with maximum GPA: RollNo 4, GPA: 8.8
+
+
+
+7. DECLARE
+    v_rollno StudentTable.RollNo%TYPE := 1;
+    v_gpa    StudentTable.GPA%TYPE;
+    v_grade  VARCHAR2(2);
+BEGIN
+<<start_loop>>
+    -- Fetch GPA for current RollNo
+    SELECT GPA
+    INTO v_gpa
+    FROM StudentTable
+    WHERE RollNo = v_rollno;
+
+    -- Determine letter grade
+    IF v_gpa BETWEEN 0 AND 4 THEN
+        v_grade := 'F';
+    ELSIF v_gpa BETWEEN 4 AND 5 THEN
+        v_grade := 'E';
+    ELSIF v_gpa BETWEEN 5 AND 6 THEN
+        v_grade := 'D';
+    ELSIF v_gpa BETWEEN 6 AND 7 THEN
+        v_grade := 'C';
+    ELSIF v_gpa BETWEEN 7 AND 8 THEN
+        v_grade := 'B';
+    ELSIF v_gpa BETWEEN 8 AND 9 THEN
+        v_grade := 'A';
+    ELSIF v_gpa BETWEEN 9 AND 10 THEN
+        v_grade := 'A+';
+    ELSE
+        v_grade := 'NA';
+    END IF;
+
+    -- Print result
+    DBMS_OUTPUT.PUT_LINE('RollNo: ' || v_rollno ||
+                         ', GPA: ' || v_gpa ||
+                         ', Grade: ' || v_grade);
+
+    -- Increment RollNo
+    v_rollno := v_rollno + 1;
+
+    -- Loop until RollNo > 5
+    IF v_rollno <= 5 THEN
+        GOTO start_loop;
+    END IF;
+END;
+/
+
+RollNo: 1, GPA: 5.8, Grade: D
+RollNo: 2, GPA: 7.8, Grade: B
+RollNo: 3, GPA: 6.8, Grade: C
+RollNo: 4, GPA: 8.8, Grade: A
+RollNo: 5, GPA: 8, Grade: B
+
+
+8. DECLARE
+  2      v_name      Instructor.Name%TYPE := '&Instructor Name';  -- user input at runtime
+  3      v_id        Instructor.ID%TYPE;
+  4      v_dept      Instructor.Dept_Name%TYPE;
+  5      v_salary    Instructor.Salary%TYPE;
+  6  BEGIN
+  7      -- Try to fetch instructor details
+  8      SELECT ID, Dept_Name, Salary
+  9      INTO v_id, v_dept, v_salary
+ 10      FROM Instructor
+ 11      WHERE Name = v_name;
+ 12
+ 13      -- If exactly one row is found, display details
+ 14      DBMS_OUTPUT.PUT_LINE('Instructor Details:');
+ 15      DBMS_OUTPUT.PUT_LINE('Name: ' || v_name);
+ 16      DBMS_OUTPUT.PUT_LINE('ID: ' || v_id);
+ 17      DBMS_OUTPUT.PUT_LINE('Department: ' || v_dept);
+ 18      DBMS_OUTPUT.PUT_LINE('Salary: ' || v_salary);
+ 19
+ 20  EXCEPTION
+ 21      WHEN NO_DATA_FOUND THEN
+ 22          DBMS_OUTPUT.PUT_LINE('No instructor found with the name ' || v_name);
+ 23      WHEN TOO_MANY_ROWS THEN
+ 24          DBMS_OUTPUT.PUT_LINE('Multiple instructors found with the name ' || v_name ||
+ 25                               '. Please refine your search.');
+ 26      WHEN OTHERS THEN
+ 27          DBMS_OUTPUT.PUT_LINE('Unexpected error: ' || SQLERRM);
+ 28  END;
+ 29  /
+Enter value for instructorname: Wu
+old   2:     v_name      Instructor.Name%TYPE := '&InstructorName';  -- user input at runtime
+new   2:     v_name      Instructor.Name%TYPE := 'Wu';  -- user input at runtime
+Instructor Details:
+Name: Wu
+ID: 12121
+Department: Finance
+Salary: 90000
+
+PL/SQL procedure successfully completed.
+
+
+Additional:
+1. DECLARE
+    v_year NUMBER := &Year;  -- user input at runtime
+BEGIN
+    IF MOD(v_year, 400) = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(v_year || ' is a Leap Year');
+    ELSIF MOD(v_year, 100) = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(v_year || ' is NOT a Leap Year');
+    ELSIF MOD(v_year, 4) = 0 THEN
+        DBMS_OUTPUT.PUT_LINE(v_year || ' is a Leap Year');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE(v_year || ' is NOT a Leap Year');
+    END IF;
+END;
+/
+
+2004 is a Leap Year
+
+2. DECLARE
+    v_day   NUMBER := &RentalDay;   -- user input
+    v_month NUMBER := &RentalMonth; -- user input
+    v_year  NUMBER := &RentalYear;  -- user input
+    v_rental_date DATE;
+    v_return_date DATE;
+BEGIN
+    -- Construct rental date
+    v_rental_date := TO_DATE(v_day || '-' || v_month || '-' || v_year, 'DD-MM-YYYY');
+
+    -- Add 3 days
+    v_return_date := v_rental_date + 3;
+
+    -- Display result
+    DBMS_OUTPUT.PUT_LINE('Rental Date: ' || TO_CHAR(v_rental_date, 'DD-MON-YYYY'));
+    DBMS_OUTPUT.PUT_LINE('Return Date: ' || TO_CHAR(v_return_date, 'DD-MON-YYYY'));
+END;
+/
+
+Enter value for rentalday: 12
+old   2:     v_day   NUMBER := &RentalDay;   -- user input
+new   2:     v_day   NUMBER := 12;   -- user input
+Enter value for rentalmonth: 2
+old   3:     v_month NUMBER := &RentalMonth; -- user input
+new   3:     v_month NUMBER := 2; -- user input
+Enter value for rentalyear: 2024
+old   4:     v_year  NUMBER := &RentalYear;  -- user input
+new   4:     v_year  NUMBER := 2024;  -- user input
+Rental Date: 12-FEB-2024
+Return Date: 15-FEB-2024
+
+
+
+
