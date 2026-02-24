@@ -1,0 +1,406 @@
+1. DECLARE
+   -- Cursor to select instructors of a given department
+   CURSOR c_instructors IS
+      SELECT Instructor_Id, Salary
+      FROM Instructor
+      WHERE Dept_No = &dept_no;  -- department number provided at runtime
+
+   -- Variables to hold cursor values
+   v_instructor_id Instructor.Instructor_Id%TYPE;
+   v_salary        Instructor.Salary%TYPE;
+   v_raise_amt     NUMBER;
+BEGIN
+   -- Open cursor
+   OPEN c_instructors;
+
+   LOOP
+      -- Fetch each instructor record
+      FETCH c_instructors INTO v_instructor_id, v_salary;
+
+      -- Exit when no more rows
+      EXIT WHEN c_instructors%NOTFOUND;
+
+      -- Calculate raise amount (5% of current salary)
+      v_raise_amt := v_salary * 0.05;
+
+      -- Update salary in Instructor table
+      UPDATE Instructor
+      SET Salary = Salary + v_raise_amt
+      WHERE Instructor_Id = v_instructor_id;
+
+      -- Insert record into salary_raise table
+      INSERT INTO salary_raise (Instructor_Id, Raise_date, Raise_amt)
+      VALUES (v_instructor_id, SYSDATE, v_raise_amt);
+   END LOOP;
+
+   -- Close cursor
+   CLOSE c_instructors;
+
+   -- Commit changes
+   COMMIT;
+END;
+/
+
+
+
+1.-- salary_raise(Instructor_Id, Raise_date, Raise_amt)
+
+DECLARE
+   -- Cursor to select instructors in the given department
+   CURSOR c_instructors IS
+      SELECT ID, Salary
+      FROM Instructor
+      WHERE dept_name = '&dept_name';  -- department name entered at runtime
+
+   -- Variables to hold fetched values
+   v_instructor_id Instructor.ID%TYPE;
+   v_salary        Instructor.Salary%TYPE;
+   v_raise_amt     NUMBER;
+BEGIN
+   OPEN c_instructors;
+
+   LOOP
+      FETCH c_instructors INTO v_instructor_id, v_salary;
+
+      EXIT WHEN c_instructors%NOTFOUND;
+
+      -- Calculate 5% raise
+      v_raise_amt := v_salary * 0.05;
+
+      -- Update salary
+      UPDATE Instructor
+      SET Salary = Salary + v_raise_amt
+      WHERE ID = v_instructor_id;
+
+      -- Log the raise
+      INSERT INTO salary_raise (Instructor_Id, Raise_date, Raise_amt)
+      VALUES (v_instructor_id, SYSDATE, v_raise_amt);
+   END LOOP;
+
+   CLOSE c_instructors;
+   COMMIT;
+END;
+/
+
+
+Enter value for dept_name: Finance
+old   6:       WHERE dept_name = '&dept_name';  -- department name entered at runtime
+new   6:       WHERE dept_name = 'Finance';  -- department name entered at runtime
+
+PL/SQL procedure successfully completed.
+
+
+2.
+SET SERVEROUTPUT ON;
+
+DECLARE
+   CURSOR c_students IS
+      SELECT ID, name, dept_name, tot_cred
+      FROM (
+         SELECT ID, name, dept_name, tot_cred
+         FROM student
+         ORDER BY tot_cred ASC
+      )
+      WHERE ROWNUM <= 10;
+
+   v_id        student.ID%TYPE;
+   v_name      student.name%TYPE;
+   v_dept_name student.dept_name%TYPE;
+   v_tot_cred  student.tot_cred%TYPE;
+BEGIN
+   OPEN c_students;
+
+   LOOP
+      FETCH c_students INTO v_id, v_name, v_dept_name, v_tot_cred;
+      EXIT WHEN c_students%NOTFOUND;
+
+      -- Use %ROWCOUNT to show the current row number being processed
+      DBMS_OUTPUT.PUT_LINE('Row ' || c_students%ROWCOUNT || ': ' ||
+                           'ID: ' || v_id ||
+                           ', Name: ' || v_name ||
+                           ', Dept: ' || v_dept_name ||
+                           ', Credits: ' || v_tot_cred);
+   END LOOP;
+
+   CLOSE c_students;
+END;
+/
+
+ID: 70557, Name: Snow, Dept: Physics, Credits: 0
+ID: 12345, Name: Shankar, Dept: Comp. Sci., Credits: 32
+ID: 55739, Name: Sanchez, Dept: Music, Credits: 38
+ID: 45678, Name: Levy, Dept: Physics, Credits: 46
+ID: 54321, Name: Williams, Dept: Comp. Sci., Credits: 54
+ID: 44553, Name: Peltier, Dept: Physics, Credits: 56
+ID: 76543, Name: Brown, Dept: Comp. Sci., Credits: 58
+ID: 76653, Name: Aoi, Dept: Elec. Eng., Credits: 60
+ID: 19991, Name: Brandt, Dept: History, Credits: 80
+ID: 98765, Name: Bourikas, Dept: Elec. Eng., Credits: 98
+
+
+3.
+
+DECLARE
+   CURSOR c_course IS
+      SELECT c.course_id,
+             c.title,
+             c.dept_name,
+             c.credits,
+             i.name AS instructor_name,
+             s.building,
+             s.room_number,
+             s.time_slot_id,
+             COUNT(t.ID) AS tot_student_no
+      FROM course c
+      JOIN section s
+        ON c.course_id = s.course_id
+      JOIN teaches te
+        ON s.course_id = te.course_id
+       AND s.sec_id    = te.sec_id
+       AND s.semester  = te.semester
+       AND s.year      = te.year
+      JOIN instructor i
+        ON te.ID = i.ID
+      LEFT JOIN takes t
+        ON s.course_id = t.course_id
+       AND s.sec_id    = t.sec_id
+       AND s.semester  = t.semester
+       AND s.year      = t.year
+      GROUP BY c.course_id, c.title, c.dept_name, c.credits,
+               i.name, s.building, s.room_number, s.time_slot_id
+      ORDER BY c.course_id;
+BEGIN
+   -- Cursor FOR loop automatically opens, fetches, and closes
+   FOR rec IN c_course LOOP
+      DBMS_OUTPUT.PUT_LINE('Course ID: ' || rec.course_id ||
+                           ', Title: ' || rec.title ||
+                           ', Dept: ' || rec.dept_name ||
+                           ', Credits: ' || rec.credits ||
+                           ', Instructor: ' || rec.instructor_name ||
+                           ', Building: ' || rec.building ||
+                           ', Room: ' || rec.room_number ||
+                           ', Time Slot: ' || rec.time_slot_id ||
+                           ', Total Students: ' || rec.tot_student_no);
+   END LOOP;
+END;
+/
+
+Course ID: BIO-101, Title: Intro. to Biology, Dept: Biology, Credits: 4,
+Instructor: Crick, Building: Painter, Room: 514, Time Slot: B, Total Students: 1
+Course ID: BIO-301, Title: Genetics, Dept: Biology, Credits: 4, Instructor:
+Crick, Building: Painter, Room: 514, Time Slot: A, Total Students: 1
+Course ID: CS-101, Title: Intro. to Computer Science, Dept: Comp. Sci., Credits:
+4, Instructor: Katz, Building: Packard, Room: 101, Time Slot: F, Total Students:
+1
+Course ID: CS-101, Title: Intro. to Computer Science, Dept: Comp. Sci., Credits:
+4, Instructor: Srinivasan, Building: Packard, Room: 101, Time Slot: H, Total
+Students: 6
+Course ID: CS-190, Title: Game Design, Dept: Comp. Sci., Credits: 4, Instructor:
+Brandt, Building: Taylor, Room: 3128, Time Slot: A, Total Students: 2
+Course ID: CS-190, Title: Game Design, Dept: Comp. Sci., Credits: 4, Instructor:
+Brandt, Building: Taylor, Room: 3128, Time Slot: E, Total Students: 0
+Course ID: CS-315, Title: Robotics, Dept: Comp. Sci., Credits: 3, Instructor:
+Srinivasan, Building: Watson, Room: 120, Time Slot: D, Total Students: 2
+Course ID: CS-319, Title: Image Processing, Dept: Comp. Sci., Credits: 3,
+Instructor: Brandt, Building: Taylor, Room: 3128, Time Slot: C, Total Students:
+1
+Course ID: CS-319, Title: Image Processing, Dept: Comp. Sci., Credits: 3,
+Instructor: Katz, Building: Watson, Room: 100, Time Slot: B, Total Students: 1
+Course ID: CS-347, Title: Database System Concepts, Dept: Comp. Sci., Credits:
+3, Instructor: Srinivasan, Building: Taylor, Room: 3128, Time Slot: A, Total
+Students: 2
+Course ID: EE-181, Title: Intro. to Digital Systems, Dept: Elec. Eng., Credits:
+3, Instructor: Kim, Building: Taylor, Room: 3128, Time Slot: C, Total Students:
+1
+Course ID: FIN-201, Title: Investment Banking, Dept: Finance, Credits: 3,
+Instructor: Wu, Building: Packard, Room: 101, Time Slot: B, Total Students: 1
+Course ID: HIS-351, Title: World History, Dept: History, Credits: 3, Instructor:
+El Said, Building: Painter, Room: 514, Time Slot: C, Total Students: 1
+Course ID: MU-199, Title: Music Video Production, Dept: Music, Credits: 3,
+Instructor: Mozart, Building: Packard, Room: 101, Time Slot: D, Total Students:
+1
+Course ID: PHY-101, Title: Physical Principles, Dept: Physics, Credits: 4,
+Instructor: Einstein, Building: Watson, Room: 100, Time Slot: A, Total Students:
+1
+
+
+4.
+
+DECLARE
+   CURSOR c_students IS
+      SELECT s.ID, s.name, s.dept_name, s.tot_cred,
+             t.course_id, t.sec_id, t.semester, t.year
+      FROM student s
+      JOIN takes t
+        ON s.ID = t.ID
+      WHERE t.course_id = 'CS101';
+
+BEGIN
+   -- Cursor FOR loop automatically handles OPEN/FETCH/CLOSE
+   FOR rec IN c_students LOOP
+      IF rec.tot_cred < 30 THEN
+         -- Deregister student from CS101
+         DELETE FROM takes
+         WHERE ID = rec.ID
+           AND course_id = rec.course_id
+           AND sec_id = rec.sec_id
+           AND semester = rec.semester
+           AND year = rec.year;
+
+         DBMS_OUTPUT.PUT_LINE('Student ' || rec.ID || ' (' || rec.name ||
+                              ') deregistered from course ' || rec.course_id ||
+                              ' due to tot_cred < 30.');
+      ELSE
+         DBMS_OUTPUT.PUT_LINE('Student ' || rec.ID || ' (' || rec.name ||
+                              ') remains registered in ' || rec.course_id ||
+                              ' with tot_cred = ' || rec.tot_cred);
+      END IF;
+   END LOOP;
+
+   COMMIT;
+END;
+/
+
+PL/SQL procedure successfully completed.
+
+
+5. 
+ ALTER TABLE student ADD LetterGrade VARCHAR(2);
+
+-- Reset all existing values to 'F'
+UPDATE student
+SET LetterGrade = 'F';
+COMMIT;
+
+13 rows updated.
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+   CURSOR c_students IS
+      SELECT ID, tot_cred, LetterGrade
+      FROM student
+      FOR UPDATE;  -- allows WHERE CURRENT OF
+
+   v_id        student.ID%TYPE;
+   v_tot_cred  student.tot_cred%TYPE;
+   v_grade     student.LetterGrade%TYPE;
+BEGIN
+   FOR rec IN c_students LOOP
+      -- Map GPA/credits to letter grade
+      IF rec.tot_cred >= 90 THEN
+         v_grade := 'A';
+      ELSIF rec.tot_cred >= 75 THEN
+         v_grade := 'B';
+      ELSIF rec.tot_cred >= 60 THEN
+         v_grade := 'C';
+      ELSIF rec.tot_cred >= 45 THEN
+         v_grade := 'D';
+      ELSE
+         v_grade := 'F';
+      END IF;
+
+      -- Update current row using WHERE CURRENT OF
+      UPDATE student
+      SET LetterGrade = v_grade
+      WHERE CURRENT OF c_students;
+
+      DBMS_OUTPUT.PUT_LINE('Student ' || rec.ID ||
+                           ' updated to grade ' || v_grade);
+   END LOOP;
+
+   COMMIT;
+END;
+/
+
+
+Student 00128 updated to grade A
+Student 12345 updated to grade F
+Student 19991 updated to grade B
+Student 23121 updated to grade A
+Student 44553 updated to grade D
+Student 45678 updated to grade D
+Student 54321 updated to grade D
+Student 55739 updated to grade F
+Student 70557 updated to grade F
+Student 76543 updated to grade D
+Student 76653 updated to grade C
+Student 98765 updated to grade A
+Student 98988 updated to grade A
+
+PL/SQL procedure successfully completed.
+
+
+
+6.
+
+SET SERVEROUTPUT ON;
+
+DECLARE
+   -- Parameterized cursor: takes course_id as input
+   CURSOR c_instructors (p_course_id VARCHAR2) IS
+      SELECT DISTINCT i.ID, i.name, i.dept_name, i.salary
+      FROM instructor i
+      JOIN teaches te
+        ON i.ID = te.ID
+      WHERE te.course_id = p_course_id;
+
+BEGIN
+   -- Cursor FOR loop automatically opens, fetches, and closes
+   FOR rec IN c_instructors('&course_id') LOOP
+      DBMS_OUTPUT.PUT_LINE('Instructor ID: ' || rec.ID ||
+                           ', Name: ' || rec.name ||
+                           ', Dept: ' || rec.dept_name ||
+                           ', Salary: ' || rec.salary);
+   END LOOP;
+END;
+/
+
+Enter value for course_id: CS-101
+Instructor ID: 45565, Name: Katz, Dept: Comp. Sci., Salary: 75000
+Instructor ID: 10101, Name: Srinivasan, Dept: Comp. Sci., Salary: 65000
+
+7.
+SET SERVEROUTPUT ON;
+
+DECLARE
+   -- Parameterized cursor: takes advisor ID as input
+   CURSOR c_students (p_instructor_id VARCHAR2) IS
+      SELECT s.ID, s.name, s.dept_name, s.tot_cred,
+             t.course_id, t.sec_id, t.semester, t.year
+      FROM student s
+      JOIN advisor a
+        ON s.ID = a.s_ID
+      JOIN takes t
+        ON s.ID = t.ID
+      JOIN teaches te
+        ON t.course_id = te.course_id
+       AND t.sec_id    = te.sec_id
+       AND t.semester  = te.semester
+       AND t.year      = te.year
+      WHERE a.i_ID = p_instructor_id
+        AND te.ID = a.i_ID;  -- advisor is the one teaching
+
+BEGIN
+   -- Prompt user for advisor ID
+   FOR rec IN c_students('&advisor_id') LOOP
+      DBMS_OUTPUT.PUT_LINE('Student ID: ' || rec.ID ||
+                           ', Name: ' || rec.name ||
+                           ', Dept: ' || rec.dept_name ||
+                           ', Credits: ' || rec.tot_cred ||
+                           ', Registered Course: ' || rec.course_id ||
+                           ', Section: ' || rec.sec_id ||
+                           ', Semester: ' || rec.semester ||
+                           ', Year: ' || rec.year);
+   END LOOP;
+END;
+/
+
+Enter value for advisor_id: 10101
+Student ID: 12345, Name: Shankar, Dept: Comp. Sci., Credits: 32, Registered
+Course: CS-101, Section: 1, Semester: Fall, Year: 2009
+Student ID: 12345, Name: Shankar, Dept: Comp. Sci., Credits: 32, Registered
+Course: CS-315, Section: 1, Semester: Spring, Year: 2010
+Student ID: 12345, Name: Shankar, Dept: Comp. Sci., Credits: 32, Registered
+Course: CS-347, Section: 1, Semester: Fall, Year: 2009
+
