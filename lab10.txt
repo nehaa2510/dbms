@@ -1,0 +1,368 @@
+1.SQL> CREATE TABLE log_change_takes (
+  2      time_of_change TIMESTAMP,
+  3      id VARCHAR(5),
+  4      course_id VARCHAR(8),
+  5      sec_id VARCHAR(8),
+  6      semester VARCHAR(6),
+  7      year NUMERIC(4,0),
+  8      grade VARCHAR(2)
+  9  );
+
+Table created.
+
+SQL> CREATE OR REPLACE TRIGGER trg_log_takes
+  2  AFTER INSERT OR UPDATE OR DELETE ON takes
+  3  FOR EACH ROW
+  4  BEGIN
+  5      -- INSERT case
+  6      IF INSERTING THEN
+  7          INSERT INTO log_change_takes
+  8          VALUES (CURRENT_TIMESTAMP,
+  9                  :NEW.ID,
+ 10                  :NEW.course_id,
+ 11                  :NEW.sec_id,
+ 12                  :NEW.semester,
+ 13                  :NEW.year,
+ 14                  :NEW.grade);
+ 15
+ 16      -- UPDATE case
+ 17      ELSIF UPDATING THEN
+ 18          INSERT INTO log_change_takes
+ 19          VALUES (CURRENT_TIMESTAMP,
+ 20                  :NEW.ID,
+ 21                  :NEW.course_id,
+ 22                  :NEW.sec_id,
+ 23                  :NEW.semester,
+ 24                  :NEW.year,
+ 25                  :NEW.grade);
+ 26
+ 27      -- DELETE case
+ 28      ELSIF DELETING THEN
+ 29          INSERT INTO log_change_takes
+ 30          VALUES (CURRENT_TIMESTAMP,
+ 31                  :OLD.ID,
+ 32                  :OLD.course_id,
+ 33                  :OLD.sec_id,
+ 34                  :OLD.semester,
+ 35                  :OLD.year,
+ 36                  :OLD.grade);
+ 37      END IF;
+ 38  END;
+ 39  /
+
+Trigger created.
+
+
+2.CREATE TABLE Old_Data_Instructor (
+    ID VARCHAR(5),
+    name VARCHAR(20),
+    dept_name VARCHAR(20),
+    salary NUMERIC(8,2)
+);
+
+Table created.
+
+CREATE OR REPLACE TRIGGER trg_old_data_instructor
+BEFORE UPDATE OF salary ON instructor
+FOR EACH ROW
+BEGIN
+    INSERT INTO Old_Data_Instructor
+    VALUES (
+        :OLD.ID,
+        :OLD.name,
+        :OLD.dept_name,
+        :OLD.salary
+    );
+END;
+/
+Trigger created.
+
+
+
+
+3.CREATE OR REPLACE TRIGGER trg_check_instructor
+BEFORE INSERT OR UPDATE ON instructor
+FOR EACH ROW
+DECLARE
+    b department.budget%TYPE;
+    i NUMBER;
+BEGIN
+    -- Name check
+    FOR i IN 1..LENGTH(:NEW.name) LOOP
+        IF NOT (SUBSTR(:NEW.name,i,1) BETWEEN 'A' AND 'Z' OR
+                SUBSTR(:NEW.name,i,1) BETWEEN 'a' AND 'z') THEN
+            RAISE_APPLICATION_ERROR(-20001,'Invalid Name');
+        END IF;
+    END LOOP;
+
+    -- Salary check
+    IF :NEW.salary <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20002,'Invalid Salary');
+    END IF;
+
+    -- Budget check
+    SELECT budget INTO b FROM department
+    WHERE dept_name = :NEW.dept_name;
+
+    IF :NEW.salary > b THEN
+        RAISE_APPLICATION_ERROR(-20003,'Exceeds Budget');
+    END IF;
+END;
+/
+Trigger created.
+
+
+4.CREATE TABLE auditclient (
+    client_no VARCHAR(10),
+    name VARCHAR(50),
+    bal_due NUMERIC(10,2),
+    operation VARCHAR(10),
+    userid VARCHAR(30),
+    opdate DATE
+);
+
+Table created.
+CREATE TABLE client_master (
+  2      client_no VARCHAR(10) PRIMARY KEY,
+  3      name VARCHAR(50),
+  4      address VARCHAR(100),
+  5      bal_due NUMBER(10,2)
+  6  );
+
+Table created.
+
+ CREATE OR REPLACE TRIGGER trg_audit_client
+  2  BEFORE UPDATE OR DELETE ON client_master
+  3  FOR EACH ROW
+  4  BEGIN
+  5      IF UPDATING THEN
+  6          INSERT INTO auditclient
+  7          VALUES (:OLD.client_no, :OLD.name, :OLD.bal_due,
+  8                  'UPDATE', USER, SYSDATE);
+  9      END IF;
+ 10
+ 11      IF DELETING THEN
+ 12          INSERT INTO auditclient
+ 13          VALUES (:OLD.client_no, :OLD.name, :OLD.bal_due,
+ 14                  'DELETE', USER, SYSDATE);
+ 15      END IF;
+ 16  END;
+ 17  /
+
+Trigger created.
+
+5.
+SQL> CREATE OR REPLACE VIEW Advisor_Student AS
+  2  SELECT s.ID AS student_id,
+  3         s.name AS student_name,
+  4         i.ID AS instructor_id,
+  5         i.name AS instructor_name
+  6  FROM advisor a
+  7  JOIN student s ON a.s_ID = s.ID
+  8  JOIN instructor i ON a.i_ID = i.ID;
+
+View created.
+
+SQL> CREATE OR REPLACE TRIGGER trg_delete_advisor_student
+  2  INSTEAD OF DELETE ON Advisor_Student
+  3  FOR EACH ROW
+  4  BEGIN
+  5      DELETE FROM advisor
+  6      WHERE s_ID = :OLD.student_id;
+  7  END;
+  8  /
+
+Trigger created.
+
+
+
+Additional Exercise:
+1. SQL> CREATE TABLE item_master (
+  2      item_id VARCHAR(10) PRIMARY KEY,
+  3      item_name VARCHAR(50) NOT NULL,
+  4      bal_stock NUMBER DEFAULT 0
+  5  );
+
+Table created.
+
+SQL> CREATE TABLE item_transaction (
+  2      trans_id VARCHAR(10) PRIMARY KEY,
+  3      item_id VARCHAR(10) NOT NULL,
+  4      qty NUMBER NOT NULL, -- positive for purchase, negative for sale
+  5      trans_date DATE DEFAULT SYSDATE,
+  6      FOREIGN KEY (item_id) REFERENCES item_master(item_id)
+  7  );
+
+Table created.
+
+ CREATE OR REPLACE TRIGGER trg_update_bal_stock
+  2  AFTER INSERT ON item_transaction
+  3  FOR EACH ROW
+  4  BEGIN
+  5      UPDATE item_master
+  6      SET bal_stock = bal_stock + :NEW.qty
+  7      WHERE item_id = :NEW.item_id;
+  8  END;
+  9  /
+
+Trigger created.
+
+
+2.
+--  Branch Table
+CREATE TABLE branch (
+    branch_name VARCHAR2(50) PRIMARY KEY,
+    branch_city VARCHAR2(50) NOT NULL,
+    assets NUMBER(15,2) NOT NULL
+);
+
+--  Customer Table
+CREATE TABLE customer (
+    customer_id NUMBER PRIMARY KEY,
+    customer_name VARCHAR2(100) NOT NULL,
+    customer_street VARCHAR2(100),
+    customer_city VARCHAR2(50)
+);
+
+--  Loan Table
+CREATE TABLE loan (
+    loan_number NUMBER PRIMARY KEY,
+    amount NUMBER(15,2) NOT NULL
+);
+
+--  Account Table
+CREATE TABLE account (
+    account_number NUMBER PRIMARY KEY,
+    balance NUMBER(15,2) NOT NULL CHECK (balance >= 0)
+);
+
+--  Employee Table
+CREATE TABLE employee (
+    employee_id NUMBER PRIMARY KEY,
+    employee_name VARCHAR2(100) NOT NULL,
+    telephone_number VARCHAR2(20),
+    start_date DATE
+);
+
+--  Dependent Table
+CREATE TABLE dependent_name (
+    employee_id NUMBER,
+    dname VARCHAR2(50),
+    PRIMARY KEY (employee_id, dname),
+    FOREIGN KEY (employee_id) REFERENCES employee(employee_id)
+);
+
+--  Account_Branch Table
+CREATE TABLE account_branch (
+    account_number NUMBER,
+    branch_name VARCHAR2(50),
+    PRIMARY KEY (account_number, branch_name),
+    FOREIGN KEY (account_number) REFERENCES account(account_number),
+    FOREIGN KEY (branch_name) REFERENCES branch(branch_name)
+);
+
+--  Loan_Branch Table
+CREATE TABLE loan_branch (
+    loan_number NUMBER,
+    branch_name VARCHAR2(50),
+    PRIMARY KEY (loan_number, branch_name),
+    FOREIGN KEY (loan_number) REFERENCES loan(loan_number),
+    FOREIGN KEY (branch_name) REFERENCES branch(branch_name)
+);
+
+--  Borrower Table
+CREATE TABLE borrower (
+    customer_id NUMBER,
+    loan_number NUMBER,
+    PRIMARY KEY (customer_id, loan_number),
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id),
+    FOREIGN KEY (loan_number) REFERENCES loan(loan_number)
+);
+
+--  Depositor Table
+CREATE TABLE depositor (
+    customer_id NUMBER,
+    account_number NUMBER,
+    PRIMARY KEY (customer_id, account_number),
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id),
+    FOREIGN KEY (account_number) REFERENCES account(account_number)
+);
+
+--  Cust_Banker Table
+CREATE TABLE cust_banker (
+    customer_id NUMBER,
+    employee_id NUMBER,
+    type VARCHAR2(20),
+    PRIMARY KEY (customer_id, employee_id),
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id),
+    FOREIGN KEY (employee_id) REFERENCES employee(employee_id)
+);
+
+--  Works_For Table
+CREATE TABLE works_for (
+    worker_employee_id NUMBER,
+    manager_employee_id NUMBER,
+    PRIMARY KEY (worker_employee_id, manager_employee_id),
+    FOREIGN KEY (worker_employee_id) REFERENCES employee(employee_id),
+    FOREIGN KEY (manager_employee_id) REFERENCES employee(employee_id)
+);
+
+--  Payment Table
+CREATE TABLE payment (
+    loan_number NUMBER,
+    payment_number NUMBER,
+    payment_date DATE,
+    payment_amount NUMBER(15,2),
+    PRIMARY KEY (loan_number, payment_number),
+    FOREIGN KEY (loan_number) REFERENCES loan(loan_number)
+);
+
+--  Savings_Account Table (Subtype)
+CREATE TABLE savings_account (
+    account_number NUMBER PRIMARY KEY,
+    interest_rate NUMBER(5,2) NOT NULL,
+    FOREIGN KEY (account_number) REFERENCES account(account_number)
+);
+
+--  Checking_Account Table (Subtype)
+CREATE TABLE checking_account (
+    account_number NUMBER PRIMARY KEY,
+    overdraft_amount NUMBER(15,2) DEFAULT 0,
+    FOREIGN KEY (account_number) REFERENCES account(account_number)
+);
+
+
+
+
+CREATE OR REPLACE TRIGGER trg_check_transaction
+BEFORE INSERT OR UPDATE ON account
+FOR EACH ROW
+DECLARE
+    v_balance account.balance%TYPE;
+BEGIN
+    -- Check if the account number exists (only relevant for UPDATE)
+    BEGIN
+        SELECT balance INTO v_balance 
+        FROM account 
+        WHERE account_number = :NEW.account_number;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Invalid account number.');
+    END;
+
+    -- Check that transaction amount is positive and non-zero
+    IF :NEW.balance <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Transaction amount must be positive and non-zero.');
+    END IF;
+
+    -- Check withdrawal: ensure new balance does not go below zero
+    IF :NEW.balance < 0 THEN
+        IF ABS(:NEW.balance) > v_balance THEN
+            RAISE_APPLICATION_ERROR(-20003, 'Withdrawal exceeds available balance.');
+        END IF;
+    END IF;
+
+END;
+/
+Trigger Created.
+
