@@ -200,5 +200,71 @@ END;
 
 
 8.
+SET SERVEROUTPUT ON;
+
+DECLARE
+   v_name Instructor.name%TYPE := '&name';
+   v_id Instructor.ID%TYPE;
+   v_dept Instructor.dept_name%TYPE;
+   v_salary Instructor.salary%TYPE;
+
+BEGIN
+   SELECT ID, dept_name, salary
+   INTO v_id, v_dept, v_salary
+   FROM Instructor
+   WHERE name = v_name;
+
+   DBMS_OUTPUT.PUT_LINE('Instructor Details:');
+   DBMS_OUTPUT.PUT_LINE('ID: ' || v_id);
+   DBMS_OUTPUT.PUT_LINE('Department: ' || v_dept);
+   DBMS_OUTPUT.PUT_LINE('Salary: ' || v_salary);
+
+EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE('No instructor found with the given name');
+
+   WHEN TOO_MANY_ROWS THEN
+      DBMS_OUTPUT.PUT_LINE('Multiple instructors found with the same name');
+
+   WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE('Some error occurred');
+END;
+/
+
+addn qns:
+8.declare
+first number;
+second number;
+op varchar2(3);
+invalid_operator exception;
+num number;
+begin
+first:=&num1;
+second:=&num2;
+op:='&operator';
+
+if op='+' then
+num := first+second;
+elsif op='/' then
+num:=first/second;
+elsif op='-' then
+num:=first-second;
+elsif op='*' then
+num:=first*second;
+else 
+raise invalid_operator;
+end if;
+dbms_output.put_line(num);
+
+
+exception
+when invalid_operator then
+dbms_output.put_line('invlaid ope');
+when zero_divide then
+dbms_output.put_line('num cant bezero ');
+
+
 end;
 /
+
+
