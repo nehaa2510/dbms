@@ -17,3 +17,188 @@
 GPA of id  2is  6.5
 
 PL/SQL procedure successfully completed.
+2. SET SERVEROUTPUT ON;
+
+DECLARE
+   v_rollno   StudentTable.RollNo%TYPE;
+   v_gpa      StudentTable.GPA%TYPE;
+   v_grade    VARCHAR2(2);
+BEGIN
+   -- Prompt user for RollNo
+   v_rollno := &RollNo;
+
+   -- Fetch GPA of the given student
+   SELECT GPA
+   INTO v_gpa
+   FROM StudentTable
+   WHERE RollNo = v_rollno;
+
+   -- Determine letter grade
+   IF v_gpa BETWEEN 0 AND 4 THEN
+      v_grade := 'F';
+   ELSIF v_gpa BETWEEN 4 AND 5 THEN
+      v_grade := 'E';
+   ELSIF v_gpa BETWEEN 5 AND 6 THEN
+      v_grade := 'D';
+   ELSIF v_gpa BETWEEN 6 AND 7 THEN
+      v_grade := 'C';
+   ELSIF v_gpa BETWEEN 7 AND 8 THEN
+      v_grade := 'B';
+   ELSIF v_gpa BETWEEN 8 AND 9 THEN
+      v_grade := 'A';
+   ELSIF v_gpa BETWEEN 9 AND 10 THEN
+      v_grade := 'A+';
+   ELSE
+      v_grade := 'Invalid GPA';
+   END IF;
+
+   -- Display result
+   DBMS_OUTPUT.PUT_LINE('RollNo: ' || v_rollno || 
+                        ' | GPA: ' || v_gpa || 
+                        ' | Grade: ' || v_grade);
+
+EXCEPTION
+   WHEN NO_DATA_FOUND THEN
+      DBMS_OUTPUT.PUT_LINE('No student found with RollNo ' || v_rollno);
+   WHEN OTHERS THEN
+      DBMS_OUTPUT.PUT_LINE('Unexpected error occurred.');
+END;
+/
+
+3.declare
+in_num number(10);
+
+begin
+in_num:=&num_of_days;
+if in_num<7 then
+dbms_output.put_line('no fine');
+elsif in_num>=9 and in_num<=15 then
+in_num:=in_num*2;
+dbms_output.put_line('Fine is '|| to_char(in_num));
+end if;
+end;
+/
+
+
+
+4.declare
+v_grade studenttable.grade%type;
+v_rollno studenttable.rollno%type:=1;
+
+begin
+while v_rollno<=5
+loop
+SELECT Grade
+      INTO v_grade
+      FROM StudentTable
+      WHERE RollNo = v_rollno;
+
+dbms_output.put_line('Roll Number of '|| v_rollno || ' has a grade of  '|| v_grade);
+v_rollno:=v_rollno+1;
+end loop;
+end;
+/
+
+
+5.SET SERVEROUTPUT ON;
+
+DECLARE
+   i NUMBER := 1;
+   gpa StudentTable.GPA%TYPE;
+   grade VARCHAR2(2);
+BEGIN
+   WHILE i <= 5 LOOP
+
+      -- Fetch GPA
+      SELECT GPA INTO gpa
+      FROM StudentTable
+      WHERE RollNo = i;
+
+      -- Assign grade
+      IF gpa < 4 THEN
+         grade := 'F';
+      ELSIF gpa < 5 THEN
+         grade := 'E';
+      ELSIF gpa < 6 THEN
+         grade := 'D';
+      ELSIF gpa < 7 THEN
+         grade := 'C';
+      ELSIF gpa < 8 THEN
+         grade := 'B';
+      ELSIF gpa < 9 THEN
+         grade := 'A';
+      ELSE
+         grade := 'A+';
+      END IF;
+
+      -- Update table
+      UPDATE StudentTable
+      SET LetterGrade = grade
+      WHERE RollNo = i;
+
+      -- Next student
+      i := i + 1;
+
+   END LOOP;
+
+   DBMS_OUTPUT.PUT_LINE('Grades Updated Successfully');
+END;
+/
+
+
+6.declare
+v_gpa studenttable.gpa%type;
+v_rollno studenttable.rollno%type:=1;
+total number;
+max_gpa studenttable.gpa%type:=0;
+
+Begin
+ SELECT COUNT(*) INTO total FROM StudentTable;
+
+FOR i IN 1..total LOOP
+select gpa into v_gpa from studenttable where rollno=i;
+if v_gpa > max_gpa then
+max_gpa:=v_gpa;
+v_rollno=i;
+end if;
+end loop;
+dbms_output.put_line("max gpa is "|| max_gpa);
+
+
+7.SET SERVEROUTPUT ON;
+
+DECLARE
+   v_grade StudentTable.Grade%TYPE;
+   v_rollno StudentTable.RollNo%TYPE := 1;
+BEGIN
+
+<<start_loop>>
+   IF v_rollno > 5 THEN
+      GOTO end_loop;
+   END IF;
+
+   -- Fetch grade
+   SELECT Grade INTO v_grade
+   FROM StudentTable
+   WHERE RollNo = v_rollno;
+
+   -- Print
+   DBMS_OUTPUT.PUT_LINE('Roll Number ' || v_rollno || 
+                        ' has grade ' || v_grade);
+
+   -- Increment
+   v_rollno := v_rollno + 1;
+
+   -- Go back to loop start
+   GOTO start_loop;
+
+<<end_loop>>
+   NULL;
+
+END;
+/
+
+
+8.
+end;
+/
