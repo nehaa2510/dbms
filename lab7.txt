@@ -1,0 +1,19 @@
+1. declare
+        in_gpa StudentTable.GPA%TYPE;
+       in_rollno StudentTable.RollNo%TYPE;
+        BEGIN
+      in_rollno :='&RollNo';
+       select GPA into in_gpa from StudentTable where in_rollno=RollNo;
+  
+    dbms_output.put_line('GPA of id  ' || in_rollno|| 'is  '|| in_gpa);
+  
+   EXCEPTION
+   when no_data_found then
+   dbms_output.put_line('No student found');
+   when others then
+   dbms_output.put_line('error');
+   end;
+/
+GPA of id  2is  6.5
+
+PL/SQL procedure successfully completed.
